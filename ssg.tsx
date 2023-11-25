@@ -275,9 +275,4 @@ async function build(conf: Partial<BuildConfig> = {}) {
     await copyStaticFiles(staticDirPath, contentDirPath, outDirPath)
 }
 
-if (import.meta.main) {
-    const data = await loadContentData("./content")
-    console.log(JSON.stringify(data, undefined, 2))
-}
-
 export { type BaseComponentProps, build, type ContentData, React }
