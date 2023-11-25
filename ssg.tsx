@@ -275,4 +275,4 @@ async function build(conf: Partial<BuildConfig> = {}) {
     await copyStaticFiles(staticDirPath, contentDirPath, outDirPath)
 }
 
-export { type BaseComponentProps, build, type ContentData, React }
+export { type BaseComponentProps, build, React }
