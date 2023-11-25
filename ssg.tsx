@@ -43,13 +43,30 @@ const FRONT_MATTER_SCHEMA = z.object({
 
 type FrontMatter = z.infer<typeof FRONT_MATTER_SCHEMA>
 
-async function loadFrontMatter(filepath: string): Promise<FrontMatter> {
+async function readWithFrontMatter(
+    filepath: string,
+): Promise<{ body: string; fm: FrontMatter }> {
     const content = await Deno.readTextFile(filepath)
     if (FrontMatter.test(content)) {
-        const { attrs } = FrontMatter.extract(content)
-        return FRONT_MATTER_SCHEMA.passthrough().parse(attrs)
+        const { attrs, body } = FrontMatter.extract(content)
+        let fm: FrontMatter
+        try {
+            fm = FRONT_MATTER_SCHEMA.passthrough().parse(attrs)
+        } catch (e) {
+            throw new Error(
+                `Error parsing front matter for \`${filepath}\`: ${e.message}`,
+                { cause: e },
+            )
+        }
+        return {
+            fm,
+            body,
+        }
     }
-    return {}
+    return {
+        fm: {},
+        body: content,
+    }
 }
 
 type ContentData = {
@@ -126,13 +143,13 @@ async function loadContentData(path: string): Promise<ContentData> {
             if (!file.name.endsWith(".md")) {
                 continue
             }
-            const fileData = await loadFrontMatter(`${path}/${file.name}`)
+            const { fm } = await readWithFrontMatter(`${path}/${file.name}`)
             if (file.name === "index.md") {
-                data.data = fileData
+                data.data = fm
             } else {
                 data.children = data.children || {}
                 data.children[file.name.slice(0, -3)] = {
-                    data: fileData,
+                    data: fm,
                     children: null,
                 }
             }
@@ -171,16 +188,10 @@ async function processMarkdownFiles(
         const contentFilePath = file.path
         console.log(`Building ${contentFilePath}`)
         const content = await Deno.readTextFile(contentFilePath)
-        let frontMatter: FrontMatter = {}
-        let bodyMatter = content
-        if (FrontMatter.test(content)) {
-            const { attrs, body } = FrontMatter.extract(content)
-            frontMatter = FRONT_MATTER_SCHEMA.passthrough().parse(attrs)
-            bodyMatter = body
-        }
+        const { fm, body } = await readWithFrontMatter(contentFilePath)
         let componentPath: string
-        if (frontMatter.component) {
-            const path = `${componentsDirPath}/${frontMatter.component}.tsx`
+        if (fm.component) {
+            const path = `${componentsDirPath}/${fm.component}.tsx`
             if (!(await fs.exists(path))) {
                 throw new Error(
                     `Component \`${path}\` specified in front matter ` +
@@ -212,8 +223,8 @@ async function processMarkdownFiles(
         }
         const Component = defaultExport as React.ComponentType<BaseComponentProps>
         const html = ReactDomServer.renderToString(
-            <Component {...frontMatter} site={contentData}>
-                <ReactMarkdown>{bodyMatter}</ReactMarkdown>
+            <Component {...fm} site={contentData}>
+                <ReactMarkdown>{body}</ReactMarkdown>
             </Component>,
         )
         await fs.ensureDir(outDirPath)
