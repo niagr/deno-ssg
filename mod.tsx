@@ -277,7 +277,7 @@ async function processMarkdownFiles(
             componentPath = path
         }
         console.log(`├─ Using component ${componentPath}`)
-        const defaultExport = (await import(componentPath)).default
+        const defaultExport = (await import(await Deno.realPath(componentPath))).default
         if (typeof defaultExport !== "function") {
             throw new Error(
                 `Component \`${componentPath}\` must export a component as the default export.`,
