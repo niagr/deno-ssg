@@ -141,7 +141,7 @@ function parseDecls(decls: string): Declaration[] {
     const root = parseCssString(decls)
     for (const node of root.nodes) {
         if (node.type !== "decl") {
-            throw new Error("Expected decl")
+            throw new Error(`Expected decl: ${node.toString()}`)
         }
     }
     return root.nodes as Declaration[]
