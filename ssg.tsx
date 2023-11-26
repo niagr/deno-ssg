@@ -173,11 +173,18 @@ async function loadContentData(path: string): Promise<ContentData> {
  * <CSS href="/css/home.css" />
  * ```
  */
-const CSS = (props: { href: string }) => (
-    <Helmet>
-        <link rel="stylesheet" href={props.href} />
-    </Helmet>
-)
+const CSS = (props: { href: string }) => {
+    if (!props.href.startsWith("/")) {
+        throw new Error(
+            `CSS href must be an absolute path (must start with '/'), got ${props.href}`,
+        )
+    }
+    return (
+        <Helmet>
+            <link rel="stylesheet" href={props.href} />
+        </Helmet>
+    )
+}
 
 /**
  * A template literal tag to create a component that adds a stylesheet to the `<head>` of the page
