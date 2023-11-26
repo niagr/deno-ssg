@@ -281,11 +281,19 @@ async function processMarkdownFiles(
             )
         }
         const Component = defaultExport as React.ComponentType<BaseComponentProps>
-        let html = ReactDomServer.renderToString(
-            <Component {...fm} site={contentData}>
-                <ReactMarkdown>{body}</ReactMarkdown>
-            </Component>,
-        )
+        let html: string
+        try {
+            html = ReactDomServer.renderToString(
+                <Component {...fm} site={contentData}>
+                    <ReactMarkdown>{body}</ReactMarkdown>
+                </Component>,
+            )
+        } catch (e) {
+            throw new Error(
+                `Error while rendering '${contentFilePath}' using '${componentPath}': ${e}`,
+                { cause: e },
+            )
+        }
         const helmet = Helmet.renderStatic()
         if (!html.includes("<head>")) {
             html = html.replace("<html>", "<html><head></head>")
