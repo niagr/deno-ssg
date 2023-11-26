@@ -11,6 +11,13 @@ import ReactMarkdown from "https://esm.sh/react-markdown@6.0.3"
 import { Helmet } from "https://esm.sh/react-helmet@6.1.0"
 import xmlpretty from "https://esm.sh/xml-formatter@3.6.0"
 
+function replacePath(origPath: string, replaceThis: string, replaceWith: string): string {
+    origPath = path.normalize(origPath)
+    replaceThis = path.normalize(replaceThis)
+    replaceWith = path.normalize(replaceWith)
+    return origPath.replace(replaceThis, replaceWith)
+}
+
 async function copyStaticFiles(staticDirPath: string, contentDirPath: string, outDirPath: string) {
     // copy files from the static directory to the output directory verbatim
     for await (const file of fs.walk(staticDirPath)) {
@@ -18,8 +25,7 @@ async function copyStaticFiles(staticDirPath: string, contentDirPath: string, ou
             continue
         }
         console.log(`Processing static file: ${file.path}`)
-        const abs = Deno.realPathSync
-        const outputPath = abs(file.path).replace(abs(staticDirPath), abs(outDirPath))
+        const outputPath = replacePath(file.path, staticDirPath, outDirPath)
         await fs.ensureDir(path.dirname(outputPath))
         await fs.copy(file.path, outputPath, { overwrite: true })
         console.log(`├─ Copied to ${outputPath}`)
@@ -31,8 +37,7 @@ async function copyStaticFiles(staticDirPath: string, contentDirPath: string, ou
             continue
         }
         console.log(`Processing non-markdown file in content dir: ${file.path}`)
-        const abs = Deno.realPathSync
-        const outputPath = abs(file.path).replace(abs(contentDirPath), abs(outDirPath))
+        const outputPath = replacePath(file.path, contentDirPath, outDirPath)
         await fs.ensureDir(path.dirname(outputPath))
         await fs.copy(file.path, outputPath, { overwrite: true })
         console.log(`├─ Copied to ${outputPath}`)
@@ -260,9 +265,7 @@ async function processMarkdownFiles(
             componentPath = path
         } else {
             await fs.ensureDir(componentsDirPath)
-            const abs = Deno.realPathSync
-            const path = abs(contentFilePath)
-                .replace(abs(contentDirPath), abs(componentsDirPath))
+            const path = replacePath(contentFilePath, contentDirPath, componentsDirPath)
                 .replace(".md", ".tsx")
             if (!(await fs.exists(path))) {
                 throw new Error(
@@ -303,9 +306,7 @@ async function processMarkdownFiles(
             `${helmet.link.toString()} ${helmet.style.toString()} </head>`,
         )
         await fs.ensureDir(outDirPath)
-        const abs = Deno.realPathSync
-        let outputPath = abs(contentFilePath)
-            .replace(abs(contentDirPath), abs(outDirPath))
+        let outputPath = replacePath(contentFilePath, contentDirPath, outDirPath)
             .replace(".md", ".html")
         if (!outputPath.endsWith("index.html")) {
             outputPath = outputPath.replace(".html", "/index.html")
