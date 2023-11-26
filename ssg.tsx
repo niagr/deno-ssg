@@ -3,10 +3,12 @@ import * as FrontMatter from "https://deno.land/std@0.207.0/front_matter/any.ts"
 import * as path from "https://deno.land/std@0.208.0/path/mod.ts"
 
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts"
+import postcss from "https://deno.land/x/postcss@8.4.16/mod.js"
 
 import React from "https://esm.sh/react@18.2.0"
 import ReactDomServer from "https://esm.sh/react-dom@18.2.0/server"
 import ReactMarkdown from "https://esm.sh/react-markdown@6.0.3"
+import { Helmet } from "https://esm.sh/react-helmet@6.1.0"
 import xmlpretty from "https://esm.sh/xml-formatter@3.6.0"
 
 async function copyStaticFiles(staticDirPath: string, contentDirPath: string, outDirPath: string) {
@@ -164,6 +166,56 @@ async function loadContentData(path: string): Promise<ContentData> {
 }
 
 /**
+ * A component that adds a stylesheet to the `<head>` of the page using a `<link>` tag.
+ *
+ * Example:
+ * ```tsx
+ * <CSS href="/css/home.css" />
+ * ```
+ */
+const CSS = (props: { href: string }) => (
+    <Helmet>
+        <link rel="stylesheet" href={props.href} />
+    </Helmet>
+)
+
+/**
+ * A template literal tag to create a component that adds a stylesheet to the `<head>` of the page
+ * using a `<style>` tag.
+ *
+ * Example:
+ *
+ * ```tsx
+ * const Style = css`
+ *     .content {
+ *         background: lightpink;
+ *     }
+ * `
+ *
+ * export default () => (
+ *  <>
+ *      <Style />
+ *      <div className="content">
+ *          some content
+ *      </div>
+ *  </>
+ * )
+ * ```
+ */
+function css(parts: TemplateStringsArray, ...args: unknown[]): React.ComponentType {
+    if (args.length > 0) {
+        throw new Error("interpolation not supported")
+    }
+    const str = parts[0]
+    postcss.parse(str) // throws if invalid
+    return () => (
+        <Helmet>
+            <style type="text/css">{str}</style>
+        </Helmet>
+    )
+}
+
+/**
  * Props passed to all components used to render markdown files.
  *
  * The props interface for components intended to be used as the root component to render markdown
@@ -222,10 +274,18 @@ async function processMarkdownFiles(
             )
         }
         const Component = defaultExport as React.ComponentType<BaseComponentProps>
-        const html = ReactDomServer.renderToString(
+        let html = ReactDomServer.renderToString(
             <Component {...fm} site={contentData}>
                 <ReactMarkdown>{body}</ReactMarkdown>
             </Component>,
+        )
+        const helmet = Helmet.renderStatic()
+        if (!html.includes("<head>")) {
+            html = html.replace("<html>", "<html><head></head>")
+        }
+        html = html.replace(
+            "</head>",
+            `${helmet.link.toString()} ${helmet.style.toString()} </head>`,
         )
         await fs.ensureDir(outDirPath)
         const abs = Deno.realPathSync
@@ -275,4 +335,4 @@ async function build(conf: Partial<BuildConfig> = {}) {
     await copyStaticFiles(staticDirPath, contentDirPath, outDirPath)
 }
 
-export { type BaseComponentProps, build, React }
+export { type BaseComponentProps, build, CSS, css, React }
