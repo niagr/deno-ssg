@@ -3,6 +3,7 @@ import * as FrontMatter from "https://deno.land/std@0.207.0/front_matter/any.ts"
 import * as path from "https://deno.land/std@0.208.0/path/mod.ts"
 
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts"
+import postcss from "https://deno.land/x/postcss@8.4.16/mod.js"
 
 import React from "https://esm.sh/react@18.2.0"
 import ReactDomServer from "https://esm.sh/react-dom@18.2.0/server"
@@ -165,13 +166,54 @@ async function loadContentData(path: string): Promise<ContentData> {
 }
 
 /**
- * Adds a stylesheet to the <head> of the page.
+ * A component that adds a stylesheet to the `<head>` of the page using a `<link>` tag.
+ *
+ * Example:
+ * ```tsx
+ * <CSS href="/css/home.css" />
+ * ```
  */
 const CSS = (props: { href: string }) => (
     <Helmet>
         <link rel="stylesheet" href={props.href} />
     </Helmet>
 )
+
+/**
+ * A template literal tag to create a component that adds a stylesheet to the `<head>` of the page
+ * using a `<style>` tag.
+ *
+ * Example:
+ *
+ * ```tsx
+ * const Style = css`
+ *     .content {
+ *         background: lightpink;
+ *     }
+ * `
+ *
+ * export default () => (
+ *  <>
+ *      <Style />
+ *      <div className="content">
+ *          some content
+ *      </div>
+ *  </>
+ * )
+ * ```
+ */
+function css(parts: TemplateStringsArray, ...args: unknown[]): React.ComponentType {
+    if (args.length > 0) {
+        throw new Error("interpolation not supported")
+    }
+    const str = parts[0]
+    postcss.parse(str) // throws if invalid
+    return () => (
+        <Helmet>
+            <style type="text/css">{str}</style>
+        </Helmet>
+    )
+}
 
 /**
  * Props passed to all components used to render markdown files.
@@ -241,7 +283,10 @@ async function processMarkdownFiles(
         if (!html.includes("<head>")) {
             html = html.replace("<html>", "<html><head></head>")
         }
-        html = html.replace("</head>", `${helmet.link.toString()}</head>`)
+        html = html.replace(
+            "</head>",
+            `${helmet.link.toString()} ${helmet.style.toString()} </head>`,
+        )
         await fs.ensureDir(outDirPath)
         const abs = Deno.realPathSync
         let outputPath = abs(contentFilePath)
@@ -290,4 +335,4 @@ async function build(conf: Partial<BuildConfig> = {}) {
     await copyStaticFiles(staticDirPath, contentDirPath, outDirPath)
 }
 
-export { type BaseComponentProps, build, CSS, React }
+export { type BaseComponentProps, build, CSS, css, React }
