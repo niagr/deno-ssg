@@ -169,7 +169,7 @@ structure is preserved.
   - `staticDirPath` - Path to the static directory. Defaults to `./static`.
   - `outDirPath` - Path to the output directory. Defaults to `./dist`.
 
-- `BaseComponentProps`
+- ### BaseComponentProps
 
   An interface representing the props that are passed to the components when rendering content.
   Components being used to render content can use this interface to get type-safety for the common
@@ -188,7 +188,7 @@ structure is preserved.
   }
   ```
 
-- `React`
+- ### React
 
   Re-export of `React`, useful for writing components without having to import React. It's
   recommended to use this instead of importing React directly to avoid version mismatch issues.
