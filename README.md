@@ -7,24 +7,34 @@ Minimalistic static site generator based on Deno and JSX.
 - Uses Deno as the runtime.
 - Zero transpilation/compilation. Deno supports JSX out of the box.
 
-## Installation
+## Install and Run
 
 #### Install Deno
 
 The framework uses Deno as the runtime. [Install Deno
 first](https://docs.deno.com/runtime/manual/getting_started/installation).
 
-#### Copy ssg.tsx to your project
+#### Import deno-ssg
 
-This "framework" is just a single file - [ssg.tsx](./ssg.tsx). You can copy it to your project and
-use it directly.
-
-The entry point `build()` is called by your script to generate the site.
+Import the module into your Deno code from deno.land/x:
 
 ```typescript
-// main.ts
+import { build } from "https://deno.land/x/deno_ssg/mod.tsx"
+```
 
-import { build } from "./ssg.tsx"
+OR
+
+This "framework" is just a single file - [mod.tsx](./mod.tsx). You can copy it to your project and
+use it directly.
+
+#### Call build()
+
+The library exports an entry point `build()`, which is called by your script to generate the site.
+
+```typescript
+// your main.ts file
+
+import { build } from "https://deno.land/x/deno_ssg/mod.tsx"
 
 await build()
 ```
@@ -107,7 +117,7 @@ rendered as HTML.
 ```typescript
 // components/Post.tsx
 
-import { React } from "./ssg.tsx"
+import { React } from "https://deno.land/x/deno_ssg/mod.tsx"
 
 export default function Post(props: { date: Date, children: React.ReactNode }) {
     return (
@@ -158,7 +168,7 @@ structure is preserved.
   Entry point for the framework. Call this function to generate the site.
 
   ```typescript
-  import { build } from "./ssg.tsx"
+  import { build } from "https://deno.land/x/deno_ssg/mod.tsx"
 
   await build()
   ```
@@ -176,7 +186,7 @@ structure is preserved.
   props passed by the framework.
 
   ```typescript
-  import { React, BaseComponentProps } from "./ssg.tsx"
+  import { React, BaseComponentProps } from "https://deno.land/x/deno_ssg/mod.tsx"
 
   export default function PostList(props: BaseComponentProps) {
       const { site } = props
