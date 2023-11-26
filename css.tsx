@@ -181,12 +181,30 @@ const styled: Styled = Object.fromEntries(
     Object.entries(Elem).map(([key, value]) => [key, styledComponent(value)]),
 ) as Record<string, unknown> as Styled
 
-const styletag = (strings: TemplateStringsArray) => {
-    if (strings.length != 1) {
-        throw new Error("Expected exactly one string")
+function joinTplStringPartsWithArgs(strings: TemplateStringsArray, args: string[]) {
+    let str = ""
+    if (strings.length > 1) {
+        for (let i = 0; i < strings.length; i++) {
+            str += strings[i]
+            if (i < args.length) {
+                str += args[i]
+            }
+        }
+    } else {
+        str = strings[0]
     }
-    parseCssString(strings[0]) // will throw if parse fails
-    return () => <style dangerouslySetInnerHTML={{ __html: strings[0] }} />
+    return str
 }
 
-export { styled, styletag }
+const css = (strings: TemplateStringsArray, ...args: string[]) => {
+    const cssStr = joinTplStringPartsWithArgs(strings, args)
+    parseCssString(cssStr) // will throw if parse fails
+    return () => <style dangerouslySetInnerHTML={{ __html: cssStr }} />
+}
+
+const cls = (className: string) => {
+    return `${className}_${crypto.randomUUID().slice(0, 8)}`
+}
+
+export { cls, css, styled }
+export default styled
